@@ -10,6 +10,8 @@ import io.renren.modules.sys.service.SysUserService;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,7 +69,8 @@ public class SysUserServiceImpl implements SysUserService {
 
 	@Override
 	@Transactional
-	public void save(SysUserEntity user) {
+	@CachePut(value = "users",key = "'user' + #user.userId ")
+	public SysUserEntity save(SysUserEntity user) {
 		user.setCreateTime(new Date());
 		//sha256加密
 		String salt = RandomStringUtils.randomAlphanumeric(20);
@@ -77,11 +80,13 @@ public class SysUserServiceImpl implements SysUserService {
 		
 		//保存用户与角色关系
 		sysUserRoleService.saveOrUpdate(user.getUserId(), user.getRoleIdList());
+		return user;
 	}
 
 	@Override
 	@Transactional
-	public void update(SysUserEntity user) {
+	@CachePut(value = "users",key = "'user:' + #user.userId ")
+	public SysUserEntity update(SysUserEntity user) {
 		if(StringUtils.isBlank(user.getPassword())){
 			user.setPassword(null);
 		}else{
@@ -91,6 +96,7 @@ public class SysUserServiceImpl implements SysUserService {
 		
 		//保存用户与角色关系
 		sysUserRoleService.saveOrUpdate(user.getUserId(), user.getRoleIdList());
+		return user;
 	}
 
 	@Override
